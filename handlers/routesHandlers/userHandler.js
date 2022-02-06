@@ -173,5 +173,34 @@ handler._user.put = (requestProperties, callback) => {
     callback(400, { error: "Phone number is not valid" });
   }
 };
+// delete method
+handler._user.delete = (requestProperties, callback) => {
+  //   check the phone number is valid
+  const phone =
+    typeof requestProperties.queryStringObject.phone === "string" &&
+    requestProperties.queryStringObject.phone.trim().length === 11
+      ? requestProperties.queryStringObject.phone
+      : false;
+
+  if (phone) {
+    // look up the user
+    data.read("users", phone, (err, user) => {
+      if (!err && user) {
+        // delete the user
+        data.delete("users", phone, (err) => {
+          if (!err) {
+            callback(200, { message: "user deleted successfully" });
+          } else {
+            callback(500, { error: "server side problem to delete the user" });
+          }
+        });
+      } else {
+        callback(404, { message: "user not available" });
+      }
+    });
+  } else {
+    callback(405, { error: "Your request is not valid" });
+  }
+};
 
 module.exports = handler;
