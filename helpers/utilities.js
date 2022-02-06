@@ -39,6 +39,23 @@ utlitites.hash = (str) => {
   }
 };
 
+// create random token
+
+utlitites.createTokenId = (x) => {
+  length = typeof x === "number" && x > 0 ? x : false;
+  const possibleChar = "abcdefghijklmnopqrstuvwxyz1234567890";
+  let tokenId = "";
+  if (length) {
+    for (let i = 0; i <= length; i++) {
+      const randomNumber = Math.floor(Math.random() * possibleChar.length);
+      tokenId += possibleChar.charAt(randomNumber);
+    }
+
+    return tokenId;
+  }
+  return false;
+};
+
 // export module
 
 module.exports = utlitites;

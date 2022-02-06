@@ -1,20 +1,20 @@
 /*
-    Title: User handler
-    Description: handle user route
+    Title: Token handler
+    Description: handle user token
     Author: Md Jana Alam
     Date: 06 Feb 2022
 */
 
 // dependencies
 const data = require("../../lib/data");
-const { hash, parseJSON } = require("../../helpers/utilities");
+const { hash, parseJSON, createTokenId } = require("../../helpers/utilities");
 // handler object - module scaffolding
 const handler = {};
 
-handler.userHandler = (requestProperties, callback) => {
+handler.tokenHandler = (requestProperties, callback) => {
   const acceptedMethod = ["get", "post", "put", "delete"];
   if (acceptedMethod.indexOf(requestProperties.method) > -1) {
-    handler._user[requestProperties.method](requestProperties, callback);
+    handler._token[requestProperties.method](requestProperties, callback);
   } else {
     callback(405, {
       message: "You are not allowed",
@@ -24,24 +24,10 @@ handler.userHandler = (requestProperties, callback) => {
 
 // to handle diffrent method of user api
 // _usrer scaffoldling
-handler._user = {};
-
-// @TODO: authentication
+handler._token = {};
 
 // post method
-handler._user.post = (requestProperties, callback) => {
-  const firstName =
-    typeof requestProperties.body.firstName === "string" &&
-    requestProperties.body.firstName.trim().length > 0
-      ? requestProperties.body.firstName
-      : false;
-
-  const lastName =
-    typeof requestProperties.body.lastName === "string" &&
-    requestProperties.body.lastName.trim().length > 0
-      ? requestProperties.body.lastName
-      : false;
-
+handler._token.post = (requestProperties, callback) => {
   const phone =
     typeof requestProperties.body.phone === "string" &&
     requestProperties.body.phone.trim().length === 11
@@ -54,44 +40,46 @@ handler._user.post = (requestProperties, callback) => {
       ? requestProperties.body.password
       : false;
 
-  const tosAgreement =
-    typeof requestProperties.body.tosAgreement === "boolean"
-      ? requestProperties.body.tosAgreement
-      : false;
-
   //   check all fields are available
-  if (firstName && lastName && phone && password && tosAgreement) {
-    // make sure user does not exist
-    data.read("users", phone, (err) => {
-      if (err) {
-        const userObject = {
-          firstName,
-          lastName,
-          phone,
-          password: hash(password),
-          tosAgreement,
-        };
+  if (phone && password) {
+    // make sure user exists
+    data.read("users", phone, (err, userInfo) => {
+      if (!err && userInfo) {
+        const userData = { ...parseJSON(userInfo) };
+        const hashedPassword = hash(password);
 
-        // create new user
-        data.create("users", phone, userObject, (err) => {
-          if (!err) {
-            callback(200, { message: "user was created successfully" });
-          } else {
-            callback(500, { error: "user couldnt create" });
-          }
-        });
+        if (userData.password === hashedPassword) {
+          const tokenId = createTokenId(20);
+          const expires = Date.now() + 60 * 60 * 1000;
+          // token object
+          const tokenObject = { phone, tokenId, expires };
+          // save token in database
+          data.create("tokens", tokenId, tokenObject, (err) => {
+            if (!err) {
+              callback(200, tokenObject);
+            } else {
+              callback(500, { message: "server side error" });
+            }
+          });
+        } else {
+          callback(404, {
+            message: "Password does not match",
+          });
+        }
       } else {
-        callback(500, { message: "User already exists" });
+        callback(404, {
+          error: "user not exist!",
+        });
       }
     });
   } else {
-    callback(400, {
-      error: userObject,
+    callback(404, {
+      error: "Your request is not valid",
     });
   }
 };
 // get method
-handler._user.get = (requestProperties, callback) => {
+handler._token.get = (requestProperties, callback) => {
   //   check the phone number is valid
   const phone =
     typeof requestProperties.queryStringObject.phone === "string" &&
@@ -115,7 +103,7 @@ handler._user.get = (requestProperties, callback) => {
   }
 };
 // put method
-handler._user.put = (requestProperties, callback) => {
+handler._token.put = (requestProperties, callback) => {
   //   check the phone number is valid
   const phone =
     typeof requestProperties.body.phone === "string" &&
@@ -176,7 +164,7 @@ handler._user.put = (requestProperties, callback) => {
   }
 };
 // delete method
-handler._user.delete = (requestProperties, callback) => {
+handler._token.delete = (requestProperties, callback) => {
   //   check the phone number is valid
   const phone =
     typeof requestProperties.queryStringObject.phone === "string" &&
