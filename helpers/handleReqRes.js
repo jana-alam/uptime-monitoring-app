@@ -33,21 +33,12 @@ handler.handleReqRes = (req, res) => {
     queryStringObject,
   };
 
+  const decoder = new StringDecoder("utf-8");
+  let realData = "";
+  // choosing route handler based on url trimmed path
   const choosenHandler = routes[trimmedPath]
     ? routes[trimmedPath]
     : routes.notFound;
-  // invoke route handler function
-  choosenHandler(requestProperties, (statusCode, payload) => {
-    statusCode = typeof statusCode === "number" ? statusCode : 500;
-    payload = typeof payload === "object" ? payload : {};
-    const payloadString = JSON.stringify(payload);
-    // rerurn the final response
-    res.writeHead(statusCode);
-    res.end(payloadString);
-  });
-
-  const decoder = new StringDecoder("utf-8");
-  let realData = "";
 
   req.on("data", (buffer) => {
     realData += decoder.write(buffer);
@@ -55,8 +46,16 @@ handler.handleReqRes = (req, res) => {
 
   req.on("end", () => {
     realData += decoder.end();
-    // handle response
-    res.end("hello world changes");
+    // invoke route handler function
+    choosenHandler(requestProperties, (statusCode, payload) => {
+      statusCode = typeof statusCode === "number" ? statusCode : 500;
+      payload = typeof payload === "object" ? payload : {};
+      const payloadString = JSON.stringify(payload);
+      console.log(payload);
+      // rerurn the final response
+      res.writeHead(statusCode);
+      res.end(payloadString);
+    });
   });
 };
 

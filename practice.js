@@ -39,7 +39,7 @@ app.handleReqRes = (req, res) => {
   req.on("end", () => {
     realData += decoder.end();
     // handle response
-    res.end("Hello PRactice");
+    res.end("Hello Practice");
   });
 };
 
