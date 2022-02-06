@@ -9,6 +9,7 @@
 const url = require("url");
 const { StringDecoder } = require("string_decoder");
 const routes = require("../routes");
+const { parseJSON } = require("./utilities");
 
 // Handler object - Module Scaffolding
 const handler = {};
@@ -35,6 +36,7 @@ handler.handleReqRes = (req, res) => {
 
   const decoder = new StringDecoder("utf-8");
   let realData = "";
+
   // choosing route handler based on url trimmed path
   const choosenHandler = routes[trimmedPath]
     ? routes[trimmedPath]
@@ -46,6 +48,8 @@ handler.handleReqRes = (req, res) => {
 
   req.on("end", () => {
     realData += decoder.end();
+    requestProperties.body = parseJSON(realData);
+
     // invoke route handler function
     choosenHandler(requestProperties, (statusCode, payload) => {
       statusCode = typeof statusCode === "number" ? statusCode : 500;
@@ -53,6 +57,7 @@ handler.handleReqRes = (req, res) => {
       const payloadString = JSON.stringify(payload);
       console.log(payload);
       // rerurn the final response
+      res.setHeader("Content-Type", "application/json");
       res.writeHead(statusCode);
       res.end(payloadString);
     });
