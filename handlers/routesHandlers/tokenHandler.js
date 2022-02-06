@@ -148,27 +148,27 @@ handler._token.put = (requestProperties, callback) => {
 };
 // delete method
 handler._token.delete = (requestProperties, callback) => {
-  //   check the phone number is valid
-  const phone =
-    typeof requestProperties.queryStringObject.phone === "string" &&
-    requestProperties.queryStringObject.phone.trim().length === 11
-      ? requestProperties.queryStringObject.phone
+  //   check the token  is valid
+  const tokenId =
+    typeof requestProperties.queryStringObject.tokenId === "string" &&
+    requestProperties.queryStringObject.tokenId.trim().length === 20
+      ? requestProperties.queryStringObject.tokenId
       : false;
 
-  if (phone) {
+  if (tokenId) {
     // look up the user
-    data.read("users", phone, (err, user) => {
-      if (!err && user) {
+    data.read("tokens", tokenId, (err, tokenData) => {
+      if (!err && tokenData) {
         // delete the user
-        data.delete("users", phone, (err) => {
+        data.delete("tokens", tokenId, (err) => {
           if (!err) {
-            callback(200, { message: "user deleted successfully" });
+            callback(200, { message: "tokens deleted successfully" });
           } else {
-            callback(500, { error: "server side problem to delete the user" });
+            callback(500, { error: "server side problem to delete the token" });
           }
         });
       } else {
-        callback(404, { message: "user not available" });
+        callback(404, { message: "token not available" });
       }
     });
   } else {
