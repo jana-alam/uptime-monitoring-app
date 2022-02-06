@@ -156,10 +156,10 @@ handler._token.delete = (requestProperties, callback) => {
       : false;
 
   if (tokenId) {
-    // look up the user
+    // look up the token
     data.read("tokens", tokenId, (err, tokenData) => {
       if (!err && tokenData) {
-        // delete the user
+        // delete the token
         data.delete("tokens", tokenId, (err) => {
           if (!err) {
             callback(200, { message: "tokens deleted successfully" });
@@ -176,4 +176,22 @@ handler._token.delete = (requestProperties, callback) => {
   }
 };
 
+// token verifier
+handler._token.verifyToken = (tokenId, phone, callback) => {
+  // check token status
+  data.read("tokens", tokenId, (err, tokenData) => {
+    if (!err && tokenData) {
+      if (
+        parseJSON(tokenData).phone === phone &&
+        parseJSON(tokenData).expires > Date.now()
+      ) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    } else {
+      callback(false);
+    }
+  });
+};
 module.exports = handler;
