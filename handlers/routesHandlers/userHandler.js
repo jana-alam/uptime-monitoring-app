@@ -112,5 +112,66 @@ handler._user.get = (requestProperties, callback) => {
     callback(404, { message: "user not available" });
   }
 };
+// put method
+handler._user.put = (requestProperties, callback) => {
+  //   check the phone number is valid
+  const phone =
+    typeof requestProperties.body.phone === "string" &&
+    requestProperties.body.phone.trim().length === 11
+      ? requestProperties.body.phone
+      : false;
+  const firstName =
+    typeof requestProperties.body.firstName === "string" &&
+    requestProperties.body.firstName.trim().length > 0
+      ? requestProperties.body.firstName
+      : false;
+
+  const lastName =
+    typeof requestProperties.body.lastName === "string" &&
+    requestProperties.body.lastName.trim().length > 0
+      ? requestProperties.body.lastName
+      : false;
+
+  const password =
+    typeof requestProperties.body.password === "string" &&
+    requestProperties.body.password.trim().length >= 6
+      ? requestProperties.body.password
+      : false;
+
+  if (phone) {
+    if (firstName || lastName || password) {
+      // check the phone number is available
+      data.read("users", phone, (err, userData) => {
+        if (!err && userData) {
+          const updatedUser = { ...parseJSON(userData) };
+          if (firstName) {
+            updatedUser.firstName = firstName;
+          }
+          if (lastName) {
+            updatedUser.lastName = lastName;
+          }
+          if (password) {
+            updatedUser.password = hash(password);
+          }
+
+          // update user info
+          data.update("users", phone, updatedUser, (err) => {
+            if (!err) {
+              callback(200, { message: "user updated succeessfully" });
+            } else {
+              callback(500, { error: "server side error" });
+            }
+          });
+        } else {
+          callback(404, { message: "User not found!" });
+        }
+      });
+    } else {
+      callback(400, { error: "nothing received to update" });
+    }
+  } else {
+    callback(400, { error: "Phone number is not valid" });
+  }
+};
 
 module.exports = handler;
