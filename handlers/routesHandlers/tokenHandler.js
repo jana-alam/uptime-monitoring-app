@@ -80,7 +80,7 @@ handler._token.post = (requestProperties, callback) => {
 };
 // get method
 handler._token.get = (requestProperties, callback) => {
-  //   check the phone number is valid
+  //   check the token is valid
   const tokenId =
     typeof requestProperties.queryStringObject.tokenId === "string" ||
     requestProperties.queryStringObject.tokenId.trim().length === 20
@@ -89,7 +89,7 @@ handler._token.get = (requestProperties, callback) => {
   console.log(tokenId);
 
   if (tokenId) {
-    // look up the user
+    // look up the token
     data.read("tokens", tokenId, (err, token) => {
       if (!err && token) {
         const tokenInfo = { ...parseJSON(token) };
@@ -104,63 +104,46 @@ handler._token.get = (requestProperties, callback) => {
 };
 // put method
 handler._token.put = (requestProperties, callback) => {
-  //   check the phone number is valid
-  const phone =
-    typeof requestProperties.body.phone === "string" &&
-    requestProperties.body.phone.trim().length === 11
-      ? requestProperties.body.phone
+  //   check the token is valid
+  const tokenId =
+    typeof requestProperties.body.tokenId === "string" ||
+    requestProperties.body.tokenId.trim().length === 20
+      ? requestProperties.body.tokenId
       : false;
-  const firstName =
-    typeof requestProperties.body.firstName === "string" &&
-    requestProperties.body.firstName.trim().length > 0
-      ? requestProperties.body.firstName
-      : false;
-
-  const lastName =
-    typeof requestProperties.body.lastName === "string" &&
-    requestProperties.body.lastName.trim().length > 0
-      ? requestProperties.body.lastName
+  console.log("tokenId", tokenId);
+  const extend =
+    typeof requestProperties.body.extend === "boolean" &&
+    requestProperties.body.extend === true
+      ? requestProperties.body.extend
       : false;
 
-  const password =
-    typeof requestProperties.body.password === "string" &&
-    requestProperties.body.password.trim().length >= 6
-      ? requestProperties.body.password
-      : false;
+  if (tokenId && extend) {
+    // check the token is available & not expired
+    data.read("tokens", tokenId, (err, tokenInfo) => {
+      if (!err && tokenInfo) {
+        const tokenObject = { ...parseJSON(tokenInfo) };
 
-  if (phone) {
-    if (firstName || lastName || password) {
-      // check the phone number is available
-      data.read("users", phone, (err, userData) => {
-        if (!err && userData) {
-          const updatedUser = { ...parseJSON(userData) };
-          if (firstName) {
-            updatedUser.firstName = firstName;
-          }
-          if (lastName) {
-            updatedUser.lastName = lastName;
-          }
-          if (password) {
-            updatedUser.password = hash(password);
-          }
-
-          // update user info
-          data.update("users", phone, updatedUser, (err) => {
+        if (tokenObject.expires > Date.now()) {
+          tokenObject.expires = Date.now() + 60 * 60 * 1000;
+          // update token expiry
+          data.update("tokens", tokenId, tokenObject, (err) => {
             if (!err) {
-              callback(200, { message: "user updated succeessfully" });
+              callback(200, { message: "token updated succeessfully" });
             } else {
               callback(500, { error: "server side error" });
             }
           });
         } else {
-          callback(404, { message: "User not found!" });
+          callback(400, {
+            message: "token already expired",
+          });
         }
-      });
-    } else {
-      callback(400, { error: "nothing received to update" });
-    }
+      } else {
+        callback(404, { message: "There was a problem in your req!" });
+      }
+    });
   } else {
-    callback(400, { error: "Phone number is not valid" });
+    callback(400, { error: "token dont exist" });
   }
 };
 // delete method
