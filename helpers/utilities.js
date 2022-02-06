@@ -46,7 +46,7 @@ utlitites.createTokenId = (x) => {
   const possibleChar = "abcdefghijklmnopqrstuvwxyz1234567890";
   let tokenId = "";
   if (length) {
-    for (let i = 0; i <= length; i++) {
+    for (let i = 0; i < length; i++) {
       const randomNumber = Math.floor(Math.random() * possibleChar.length);
       tokenId += possibleChar.charAt(randomNumber);
     }

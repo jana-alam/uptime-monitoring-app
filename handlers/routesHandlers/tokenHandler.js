@@ -81,25 +81,25 @@ handler._token.post = (requestProperties, callback) => {
 // get method
 handler._token.get = (requestProperties, callback) => {
   //   check the phone number is valid
-  const phone =
-    typeof requestProperties.queryStringObject.phone === "string" &&
-    requestProperties.queryStringObject.phone.trim().length === 11
-      ? requestProperties.queryStringObject.phone
+  const tokenId =
+    typeof requestProperties.queryStringObject.tokenId === "string" ||
+    requestProperties.queryStringObject.tokenId.trim().length === 20
+      ? requestProperties.queryStringObject.tokenId
       : false;
+  console.log(tokenId);
 
-  if (phone) {
+  if (tokenId) {
     // look up the user
-    data.read("users", phone, (err, u) => {
-      if (!err && u) {
-        const user = { ...parseJSON(u) };
-        delete user.password;
-        callback(200, user);
+    data.read("tokens", tokenId, (err, token) => {
+      if (!err && token) {
+        const tokenInfo = { ...parseJSON(token) };
+        callback(200, tokenInfo);
       } else {
-        callback(404, { message: "usersss not available" });
+        callback(404, { message: "token not available" });
       }
     });
   } else {
-    callback(404, { message: "user not available" });
+    callback(404, { message: "token not available" });
   }
 };
 // put method
